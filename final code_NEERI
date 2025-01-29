@@ -1,0 +1,129 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+
+using namespace std;
+
+// Function to calculate polynomial regression
+vector<double> polynomialRegression(const vector<int>& years, const vector<double>& values, int degree) {
+    int n = years.size();
+    int m = degree + 1;
+    vector<vector<double>> X(n, vector<double>(m, 0.0));
+    vector<vector<double>> Xt(m, vector<double>(n, 0.0));
+    vector<vector<double>> XtX(m, vector<double>(m, 0.0));
+    vector<double> Xty(m, 0.0);
+    vector<double> coefficients(m, 0.0);
+
+    // Build the X matrix
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            X[i][j] = pow(years[i], j);
+        }
+    }
+
+    // Transpose X matrix to Xt
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            Xt[j][i] = X[i][j];
+        }
+    }
+
+    // Calculate XtX and Xty
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < m; ++j) {
+            for (int k = 0; k < n; ++k) {
+                XtX[i][j] += Xt[i][k] * X[k][j];
+            }
+        }
+        for (int k = 0; k < n; ++k) {
+            Xty[i] += Xt[i][k] * values[k];
+        }
+    }
+
+    // Solve the system of linear equations XtX * coefficients = Xty using Gaussian elimination
+    for (int i = 0; i < m; ++i) {
+        // Pivot
+        int maxRow = i;
+        for (int k = i + 1; k < m; ++k) {
+            if (fabs(XtX[k][i]) > fabs(XtX[maxRow][i])) {
+                maxRow = k;
+            }
+        }
+        swap(XtX[i], XtX[maxRow]);
+        swap(Xty[i], Xty[maxRow]);
+
+        // Eliminate
+        for (int k = i + 1; k < m; ++k) {
+            double factor = XtX[k][i] / XtX[i][i];
+            for (int j = i; j < m; ++j) {
+                XtX[k][j] -= factor * XtX[i][j];
+            }
+            Xty[k] -= factor * Xty[i];
+        }
+    }
+
+    // Back substitution
+    for (int i = m - 1; i >= 0; --i) {
+        coefficients[i] = Xty[i] / XtX[i][i];
+        for (int k = i - 1; k >= 0; --k) {
+            Xty[k] -= XtX[k][i] * coefficients[i];
+        }
+    }
+
+    return coefficients;
+}
+
+// Function to predict using polynomial regression coefficients
+double predict(const vector<double>& coefficients, int year) {
+    double prediction = 0.0;
+    for (int i = 0; i < coefficients.size(); ++i) {
+        prediction += coefficients[i] * pow(year, i);
+    }
+    return prediction;
+}
+
+int main() {
+    vector<int> years = {2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019,
+                         2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029,
+                         2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039,
+                         2040, 2041, 2042, 2043, 2044, 2045, 2046, 2047, 2048, 2049,
+                         2050, 2051, 2052, 2053, 2054, 2055, 2056, 2057, 2058, 2059,
+                         2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070};
+
+    vector<double> production = {748, 927, 1189.54, 1486.25, 1798.11, 2153.83, 2603.12, 2928, 3279.36, 3606.925,
+                                 2910.12, 3105.92, 3663.98, 4021.76, 5553.14, 7084.52, 8615.9, 10147.28, 11678.66, 13210.04,
+                                 14741.41, 16272.79, 17804.17, 19335.55, 20866.93, 22398.31, 23929.69, 25461.07, 26992.45, 28523.83,
+                                 30055.21, 31586.59, 33117.97, 34649.35, 36180.72, 37712.1, 39243.48, 40774.86, 42306.24, 43837.62,
+                                 45369, 49636.6, 53904.2, 58171.8, 62439.4, 66707, 70974.6, 75242.2, 79509.8, 83777.4,
+                                 88045, 92312.6, 96580.2, 100847.8, 105115.4, 109383, 113650.6, 117918.2, 122185.8, 126453.4,
+                                 130721};
+
+    vector<double> waste = {29.92, 43.41, 56.46, 67.25, 81.57, 101.82, 121.16, 133.78, 156.74, 186.52,
+                            213.378, 245.23, 281.75, 321.54, 777.92, 1000.93, 1214.92, 1445.31, 1741.49, 2081.2,
+                            2603.12, 2928, 3279.36, 3606.93, 2910.12, 3105.92, 3663.98, 4021.76, 5553.14, 7084.52,
+                            8615.9, 10147.28, 11678.66, 13210.04, 14741.41, 16272.79, 17804.17, 19335.55, 20866.93, 22398.31,
+                            23929.69, 25461.07, 26992.45, 28523.83, 30055.21, 31586.59, 33117.97, 34649.35, 36180.72, 37712.1,
+                            39243.48, 40774.86, 42306.24, 43837.62, 45369, 49636.6, 53904.2, 58171.8, 62439.4, 66707,
+                            70974.6};
+
+    int degree = 3;
+
+    // Calculate polynomial regression coefficients
+    vector<double> productionCoefficients = polynomialRegression(years, production, degree);
+    vector<double> wasteCoefficients = polynomialRegression(years, waste, degree);
+
+    // Ask for user input
+    int inputYear;
+    cout << "Enter a year to predict production and waste: ";
+    cin >> inputYear;
+
+    // Predict production and waste
+    double predictedProduction = predict(productionCoefficients, inputYear);
+    double predictedWaste = predict(wasteCoefficients, inputYear);
+
+    // Output the results
+    cout << "Predicted Production for year " << inputYear << ": " << predictedProduction << " metric tons" << endl;
+    cout << "Predicted Waste Produced for year " << inputYear << ": " << predictedWaste << " metric tons" << endl;
+
+    return 0;
+}
